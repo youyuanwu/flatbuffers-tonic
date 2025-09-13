@@ -10,7 +10,7 @@ categories.workspace = true
 keywords.workspace = true
 
 readme = "../README.md"
-description = "flatbuffers gRPC for Rust."
+description = "gRPC with flatbuffers for Rust."
 
 [dependencies]
 flatbuffers.workspace = true

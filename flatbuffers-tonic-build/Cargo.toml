@@ -10,7 +10,7 @@ categories.workspace = true
 keywords.workspace = true
 
 readme = "../README.md"
-description = "gRPC flatbuffers code generator."
+description = "gRPC with flatbuffers code generator."
 
 [dependencies]
 tonic-build = { workspace = true }
