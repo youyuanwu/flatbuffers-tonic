@@ -1,0 +1,17 @@
+namespace helloworld;
+
+attribute "streaming";
+
+table HelloRequest {
+    name:string;
+}
+
+table HelloReply {
+    message:string;
+}
+
+root_type HelloReply;
+
+rpc_service Greeter {
+    SayHello(HelloRequest): HelloReply (streaming: "none");
+}

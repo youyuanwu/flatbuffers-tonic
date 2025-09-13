@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = [ "flatbuffers-tonic-build", "flatbuffers-util","flatbuffers-tonic", "flatbuffers-tonic-tests"]
+package.edition = "2024"
+package.authors = [ "youyuanwu@outlook.com" ]
+package.documentation = "https://docs.rs/flatbuffers-tonic/latest/flatbuffers_tonic/"
+package.repository = "https://github.com/youyuanwu/flatbuffers-tonic"
+package.license = "MIT"
+package.readme = "./README.md"
+package.categories = ["web-programming", "network-programming"]
+package.keywords = ["flatbuffers", "gRPC", "tonic"]
+
+[workspace.dependencies]
+flatbuffers = { version = ">=25.2.10,<26" }
+tonic = { version = "0.14" }
+tonic-build = "0.14"
+tonic-prost-build = "0.14"
+flatbuffers-build = { version = "0.2.3"}
+flatbuffers-reflection = "0.1"
+bytes = "1"
+tokio = "1"
+tokio-util = "0.7"
+quote = "1"
+proc-macro2 = "1"
+prettyplease = "0.2"
+syn = { version = "2"}
+heck = "0.5"
+
+flatbuffers-tonic = { path = "flatbuffers-tonic" }
+flatbuffers-tonic-tests = { path = "flatbuffers-tonic-tests" }
+flatbuffers-util = { path = "flatbuffers-util" , features = ["reflect"] , default-features = false}
+flatbuffers-tonic-build = { path = "flatbuffers-tonic-build" }

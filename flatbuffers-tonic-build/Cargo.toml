@@ -1,0 +1,24 @@
+[package]
+name = "flatbuffers-tonic-build"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+authors.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+readme = "../README.md"
+description = "gRPC flatbuffers code generator."
+
+[dependencies]
+tonic-build = { workspace = true }
+tonic-prost-build = { workspace = true }
+flatbuffers-util = { workspace = true }
+quote.workspace = true
+proc-macro2.workspace = true
+prettyplease.workspace = true
+syn.workspace = true
+heck.workspace = true
+flatbuffers-build.workspace = true

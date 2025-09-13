@@ -1,0 +1,17 @@
+[package]
+name = "flatbuffers-tonic-tests"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+flatbuffers.workspace = true
+tonic.workspace = true
+flatbuffers-tonic.workspace = true
+flatbuffers-util.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+
+[build-dependencies]
+flatbuffers-util.workspace = true
+flatbuffers-tonic-build.workspace = true

@@ -1,0 +1,19 @@
+[package]
+name = "flatbuffers-tonic"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+authors.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+readme = "../README.md"
+description = "flatbuffers gRPC for Rust."
+
+[dependencies]
+flatbuffers.workspace = true
+flatbuffers-util.workspace = true
+tonic.workspace = true
+bytes.workspace = true
