@@ -8,6 +8,7 @@ use tonic::{
 
 use crate::OwnedFBCodecable;
 
+/// TODO: codec still has copy step due to flatbuffer using Vec with offset.
 #[derive(Debug, Clone)]
 pub struct FlatBuffersCodec<T, U> {
     _pd: PhantomData<(T, U)>,
@@ -68,7 +69,11 @@ where
     type Error = Status;
 
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        buf.put_slice(item.get_slice());
+        // First could be zero copy due to Bytes::from(vec)
+        let bytes = item.into_bytes();
+        buf.reserve(bytes.len());
+        // This still require copy due to BytesMut impl. This does not seem to be fixable.
+        buf.put(bytes);
         Ok(())
     }
 
@@ -91,11 +96,10 @@ impl<U: OwnedFBCodecable + Send + 'static> Decoder for FlatBuffersDecoder<U> {
         &mut self,
         src: &mut tonic::codec::DecodeBuf<'_>,
     ) -> Result<Option<Self::Item>, Self::Error> {
-        // get the buf into a contiguous slice
-        let len = src.remaining();
-        let mut buf = vec![0u8; len];
-        src.copy_to_slice(&mut buf);
-        let owned_fb = U::new_boxed(buf.into_boxed_slice())
+        // First should be zero copy due to BytesMut impl.
+        let buf = src.copy_to_bytes(src.remaining());
+        // This may be zero copy or copy depending on the Bytes state.
+        let owned_fb = U::new_from_bytes(buf)
             .map_err(|e| Status::internal(format!("Failed to decode FlatBuffer: {}", e)))?;
         Ok(Some(owned_fb))
     }

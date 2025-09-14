@@ -58,8 +58,7 @@ pub fn compile_reflection_schema(
 
     // Read the temp file
     let schema_data = fs::read(&schema_file_path).expect("Failed to read schema file");
-    let schema =
-        OwnedFB::new_boxed(schema_data.into_boxed_slice()).expect("Failed to create OwnedFB");
+    let schema = OwnedFB::new_from_vec(schema_data, 0).expect("Failed to create OwnedFB");
 
     // remove temp file
     let _ = fs::remove_dir_all(temp_full_dir);

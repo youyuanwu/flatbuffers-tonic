@@ -23,8 +23,7 @@ impl helloworld_gen::greeter_server::Greeter for Greeter {
             },
         );
         builder.finish_minimal(reply);
-        let resp =
-            OwnedFB::new_boxed(builder.finished_data().to_owned().into_boxed_slice()).unwrap();
+        let resp = unsafe { OwnedFB::new_from_builder_collapse(builder.collapse()) };
         Ok(tonic::Response::new(OwnedHelloReply(resp)))
     }
 }
@@ -73,13 +72,9 @@ async fn test_server_client() {
         },
     );
     builder.finish_minimal(req);
-    let req = builder.finished_data();
-    let boxed_buff = req.to_owned().into_boxed_slice();
-    let owned =
-        flatbuffers_util::ownedfb::OwnedFB::<helloworld_gen::helloworld::HelloRequest>::new_boxed(
-            boxed_buff,
-        )
-        .unwrap();
+    let owned = unsafe {
+        flatbuffers_util::ownedfb::OwnedFB::<helloworld_gen::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
+    };
     let response = client
         .say_hello(tonic::Request::new(OwnedHelloRequest(owned)))
         .await

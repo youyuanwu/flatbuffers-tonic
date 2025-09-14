@@ -13,14 +13,16 @@ mod wrappers {
     );
 
     impl OwnedFBCodecable for OwnedHelloRequest {
-        fn new_boxed(buf: Box<[u8]>) -> Result<Self, flatbuffers::InvalidFlatbuffer> {
+        fn new_from_bytes(buf: bytes::Bytes) -> Result<Self, flatbuffers::InvalidFlatbuffer> {
             let owned =
-                flatbuffers_util::ownedfb::OwnedFB::<helloworld::HelloRequest>::new_boxed(buf)?;
-            Ok(OwnedHelloRequest(owned))
+                flatbuffers_util::ownedfb::OwnedFB::<helloworld::HelloRequest>::new_from_bytes(
+                    buf,
+                )?;
+            Ok(Self(owned))
         }
 
-        fn get_slice(&self) -> &[u8] {
-            self.0.get_slice()
+        fn into_bytes(self) -> bytes::Bytes {
+            self.0.into_bytes()
         }
     }
 }

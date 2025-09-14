@@ -11,6 +11,7 @@ flatbuffers-tonic.workspace = true
 flatbuffers-util.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
+bytes.workspace = true
 
 [build-dependencies]
 flatbuffers-util.workspace = true

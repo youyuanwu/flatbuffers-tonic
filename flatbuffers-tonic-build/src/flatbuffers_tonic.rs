@@ -78,13 +78,13 @@ pub fn compile_types_alias(package: &str, types: &Vec<MessageType>) -> TokenStre
         // add impl
         content.extend(quote! {
             impl flatbuffers_tonic::OwnedFBCodecable for #wrapper_type {
-                fn new_boxed(buf: Box<[u8]>) -> Result<Self, flatbuffers::InvalidFlatbuffer> {
-                    let owned = flatbuffers_tonic::OwnedFB::<#rs_type_mod::#rs_type<'static>>::new_boxed(buf)?;
-                    Ok(#wrapper_type(owned))
+                fn new_from_bytes(bytes: bytes::Bytes) -> Result<Self, flatbuffers::InvalidFlatbuffer> {
+                    let owned = flatbuffers_tonic::OwnedFB::<#rs_type_mod::#rs_type<'static>>::new_from_bytes(bytes)?;
+                    Ok(Self(owned))
                 }
 
-                fn get_slice(&self) -> &[u8] {
-                    self.0.get_slice()
+                fn into_bytes(self) -> bytes::Bytes {
+                    self.0.into_bytes()
                 }
             }
         });

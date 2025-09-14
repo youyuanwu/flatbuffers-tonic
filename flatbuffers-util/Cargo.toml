@@ -15,6 +15,7 @@ description = "flatbuffers utilities."
 [dependencies]
 flatbuffers.workspace = true
 flatbuffers-reflection = { workspace = true, optional = true }
+bytes.workspace = true
 
 [features]
 default = []

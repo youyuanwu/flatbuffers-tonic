@@ -233,6 +233,7 @@ dependencies = [
 name = "flatbuffers-tonic-tests"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "flatbuffers",
  "flatbuffers-tonic",
  "flatbuffers-tonic-build",
@@ -246,6 +247,7 @@ dependencies = [
 name = "flatbuffers-util"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "flatbuffers",
  "flatbuffers-reflection",
 ]
