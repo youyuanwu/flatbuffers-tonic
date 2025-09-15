@@ -1,0 +1,67 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-2025, ubuntu-latest ]
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Install rust stable
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.89.0
+        components: rustfmt, clippy
+    
+    # - uses: taiki-e/install-action@protoc
+
+    # install flatc
+    - name: Install flatc windows
+      if: runner.os == 'Windows'
+      run: |
+        winget install flatbuffers --accept-package-agreements --accept-source-agreements --disable-interactivity
+        echo "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Google.FlatBuffers_Microsoft.Winget.Source_8wekyb3d8bbwe" >> $env:GITHUB_PATH
+    
+    - name: Install flatc ubuntu
+      if: runner.os == 'Linux'
+      run: |
+        wget https://github.com/google/flatbuffers/releases/download/v25.2.10/Linux.flatc.binary.clang++-18.zip
+        unzip Linux.flatc.binary.clang++-18.zip
+        sudo mv flatc /usr/local/bin/
+    
+    - name: Check flatc version
+      run: flatc --version
+
+    - uses: taiki-e/install-action@cargo-llvm-cov
+
+    - name: Run cargo check
+      run: cargo check
+
+    - name: Run cargo fmt
+      run: cargo fmt --all -- --check
+    
+    - name: Run cargo clippy
+      run: cargo clippy --all-targets -- -D warnings
+
+    - name: Run cargo build
+      run: cargo build --all-targets
+
+    - name: Run cargo test
+      run: cargo test --all -- --nocapture
+
+    - name: Run llvm-cov
+      run: cargo llvm-cov --codecov --output-path codecov.json --include-build-script --ignore-filename-regex "flatbuffers-tonic-tests.*"
+
+    - name: Show cov summary
+      run: cargo llvm-cov report --summary-only --include-build-script --ignore-filename-regex "flatbuffers-tonic-tests.*"
+
+    # - name: Upload Report to Codecov
+    #   uses: codecov/codecov-action@v5
+    #   with:
+    #     files: ./codecov.json
+    #     fail_ci_if_error: true
+    #     token: ${{ secrets.CODECOV_TOKEN }} # required
