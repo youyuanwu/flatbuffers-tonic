@@ -6,7 +6,7 @@ use tonic::codec::Codec;
 mod wrappers {
     use flatbuffers_tonic::OwnedFBCodecable;
 
-    use crate::helloworld_gen::helloworld;
+    use crate::helloworld_gen::fbs::helloworld;
 
     pub struct OwnedHelloRequest(
         pub flatbuffers_util::ownedfb::OwnedFB<helloworld::HelloRequest<'static>>,

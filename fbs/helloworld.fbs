@@ -1,4 +1,4 @@
-namespace helloworld;
+namespace fbs.helloworld;
 
 attribute "streaming";
 

@@ -16,9 +16,9 @@ impl helloworld_gen::greeter_server::Greeter for Greeter {
         println!("Got a name: {name:?}");
         let mut builder = flatbuffers::FlatBufferBuilder::new();
         let hello_str = builder.create_string(&format!("hello {}", name.unwrap_or("")));
-        let reply = helloworld_gen::helloworld::HelloReply::create(
+        let reply = helloworld_gen::fbs::helloworld::HelloReply::create(
             &mut builder,
-            &helloworld_gen::helloworld::HelloReplyArgs {
+            &helloworld_gen::fbs::helloworld::HelloReplyArgs {
                 message: Some(hello_str),
             },
         );
@@ -65,15 +65,15 @@ async fn test_server_client() {
 
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let name_str = builder.create_string("tonic fbs");
-    let req = helloworld_gen::helloworld::HelloRequest::create(
+    let req = helloworld_gen::fbs::helloworld::HelloRequest::create(
         &mut builder,
-        &helloworld_gen::helloworld::HelloRequestArgs {
+        &helloworld_gen::fbs::helloworld::HelloRequestArgs {
             name: Some(name_str),
         },
     );
     builder.finish_minimal(req);
     let owned = unsafe {
-        flatbuffers_util::ownedfb::OwnedFB::<helloworld_gen::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
+        flatbuffers_util::ownedfb::OwnedFB::<helloworld_gen::fbs::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
     };
     let response = client
         .say_hello(tonic::Request::new(OwnedHelloRequest(owned)))

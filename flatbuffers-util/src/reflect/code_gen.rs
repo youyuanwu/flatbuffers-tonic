@@ -1,12 +1,46 @@
 use flatbuffers_reflection::reflection;
 
-pub fn get_services_from_schema(schema: &reflection::Schema) -> Vec<Service> {
+fn get_services_from_schema(schema: &reflection::Schema) -> Vec<Service> {
     schema
         .services()
         .unwrap()
         .iter()
         .map(|service| Service::new_from_schema(&service))
         .collect()
+}
+
+pub struct GeneratorContext {
+    pub services: Vec<Service>,
+}
+
+impl GeneratorContext {
+    pub fn parse_from_schema(schema: &reflection::Schema) -> Self {
+        let services = get_services_from_schema(schema);
+        GeneratorContext { services }
+    }
+
+    pub fn get_services(&self) -> &[Service] {
+        &self.services
+    }
+
+    pub fn collect_in_out_types(&self) -> Vec<MessageType> {
+        collect_in_out_types(&self.services)
+    }
+
+    /// get the namespace in raw form
+    /// useful for creating files.
+    pub fn get_namespace(&self) -> String {
+        assert_ne!(self.services.len(), 0, "no services found");
+        self.services[0].namespace.as_ref().unwrap().clone()
+    }
+
+    /// replace dot with double colon
+    /// and to lowercase.
+    /// This is the rust mod path to be used for accessing
+    /// the flatbuffers generated code from the wrapper types.
+    pub fn get_namespace_rs(&self) -> String {
+        self.get_namespace().replace('.', "::").to_lowercase()
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -10,8 +10,8 @@ pub(crate) fn compile_flatbuffers_tonic_only(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let schema = flatbuffers_util::reflect::compile_reflection_schema(path);
     let schema_ref = schema.get_ref();
-    let services = flatbuffers_util::reflect::get_services_from_schema(&schema_ref);
-    let types = flatbuffers_util::reflect::collect_in_out_types(&services);
+    let gen_ctx = flatbuffers_util::reflect::GeneratorContext::parse_from_schema(&schema_ref);
+    let types = gen_ctx.collect_in_out_types();
 
     // println!("Processing service: {services:?}");
     // println!("Processing types: {types:?}");
@@ -19,17 +19,17 @@ pub(crate) fn compile_flatbuffers_tonic_only(
     // generate types alias file
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let out_dir = Path::new(&out_dir);
-    let package = types[0].namespace.as_ref().expect("no package found");
-    let tonic_services = get_tonic_services(&services);
+    let rs_package = gen_ctx.get_namespace_rs();
+    let tonic_services = get_tonic_services(gen_ctx.get_services());
     tonic_prost_build::manual::Builder::new().compile(&tonic_services);
 
-    let content = compile_flatbuffers_tonic_file(package, &types, &services);
-    write_tonic_flatbuffers_file(out_dir, &content, package)?;
+    let content = compile_flatbuffers_tonic_file(&rs_package, &types, gen_ctx.get_services());
+    write_tonic_flatbuffers_file(out_dir, &content, &gen_ctx.get_namespace())?;
     Ok(())
 }
 
 fn get_tonic_services(
-    services: &Vec<flatbuffers_util::reflect::Service>,
+    services: &[flatbuffers_util::reflect::Service],
 ) -> Vec<tonic_prost_build::manual::Service> {
     let mut tonic_services = Vec::new();
     for service in services {
@@ -65,7 +65,7 @@ pub fn compile_types_alias(package: &str, types: &Vec<MessageType>) -> TokenStre
     for t in types {
         let wrapper_type = quote::format_ident!("Owned{}", t.fb_type);
         let rs_type = quote::format_ident!("{}", t.fb_type);
-        let rs_type_mod = quote::format_ident!("{}", package);
+        let rs_type_mod: syn::Path = syn::parse_str(package).unwrap();
         // add definition
         content.extend(quote! {
             pub struct #wrapper_type(pub flatbuffers_tonic::OwnedFB<#rs_type_mod::#rs_type<'static>>);
@@ -95,7 +95,7 @@ pub fn compile_types_alias(package: &str, types: &Vec<MessageType>) -> TokenStre
 pub fn compile_flatbuffers_tonic_file(
     package: &str,
     types: &Vec<MessageType>,
-    services: &Vec<flatbuffers_util::reflect::Service>,
+    services: &[flatbuffers_util::reflect::Service],
 ) -> TokenStream {
     let mut content = TokenStream::new();
 
@@ -127,16 +127,18 @@ pub fn compile_flatbuffers_tonic_file(
 fn write_tonic_flatbuffers_file(
     out_dir: &Path,
     content: &TokenStream,
-    package: &str,
+    package_file_suffix: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     use std::fs::File;
     use std::io::Write;
 
-    let dest_path = out_dir.join(format!("flatbuffers_tonic.{package}.rs"));
+    let dest_path = out_dir.join(format!("flatbuffers_tonic.{package_file_suffix}.rs"));
     let mut f = File::create(&dest_path)?;
 
     // Parse TokenStream to syn::File and pretty-print
-    let syntax_tree: syn::File = syn::parse2(content.clone()).unwrap();
+    let syntax_tree: syn::File = syn::parse2(content.clone()).unwrap_or_else(|e| {
+        panic!("Failed to parse generated content to syntax tree: {e} : {content}");
+    });
     let formatted = prettyplease::unparse(&syntax_tree);
     f.write_all(formatted.as_bytes())?;
     Ok(())
