@@ -1,4 +1,4 @@
-pub mod helloworld_gen;
+pub mod generated;
 
 #[cfg(test)]
 mod reflect_test;

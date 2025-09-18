@@ -239,6 +239,7 @@ dependencies = [
  "flatbuffers-tonic-build",
  "flatbuffers-util",
  "tokio",
+ "tokio-stream",
  "tokio-util",
  "tonic",
 ]

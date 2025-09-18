@@ -1,7 +1,7 @@
 use flatbuffers::FlatBufferBuilder;
 use flatbuffers_util::ownedfb::OwnedFB;
 
-use crate::helloworld_gen::fbs::helloworld::{HelloRequest, HelloRequestArgs};
+use crate::generated::fbs::helloworld::{HelloRequest, HelloRequestArgs};
 
 #[test]
 fn fbs_test() {

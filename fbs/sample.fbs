@@ -1,0 +1,25 @@
+// There is a bug in flatc code gen. Namespace hierarchy does not work. 
+namespace sample;
+
+attribute "streaming";
+
+table sample_request {
+    name:string;
+}
+
+table sample_reply {
+    message:string;
+}
+
+table client_stream_request{
+    index: int;
+}
+
+table client_stream_response{
+    count: int; // total number of stream chunk from client
+}
+
+rpc_service Sample {
+    say_hello(sample_request): sample_reply (streaming: "none");
+    client_stream(client_stream_request): client_stream_response (streaming: "client");
+}
