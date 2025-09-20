@@ -8,7 +8,7 @@ use tonic::{
 
 use crate::OwnedFBCodecable;
 
-/// TODO: codec still has copy step due to flatbuffer using Vec with offset.
+/// TODO: codec still has copy step due to tonic DecodeBuf and EncodeBuf implementation.
 #[derive(Debug, Clone)]
 pub struct FlatBuffersCodec<T, U> {
     _pd: PhantomData<(T, U)>,
@@ -98,7 +98,7 @@ impl<U: OwnedFBCodecable + Send + 'static> Decoder for FlatBuffersDecoder<U> {
     ) -> Result<Option<Self::Item>, Self::Error> {
         // First should be zero copy due to BytesMut impl.
         let buf = src.copy_to_bytes(src.remaining());
-        // This may be zero copy or copy depending on the Bytes state.
+        // This is not zero copy because DecodeBuf is a shared BytesMut.
         let owned_fb = U::new_from_bytes(buf)
             .map_err(|e| Status::internal(format!("Failed to decode FlatBuffer: {}", e)))?;
         Ok(Some(owned_fb))

@@ -1,5 +1,5 @@
 fn main() {
-    flatbuffers_tonic_build::compile_flat_buffer_tonic(&[
+    flatbuffers_tonic_build::compile_flatbuffers_tonic(&[
         "../fbs/fbs.helloworld.fbs",
         "../fbs/sample.fbs",
     ])

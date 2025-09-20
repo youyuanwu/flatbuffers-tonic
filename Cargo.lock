@@ -206,7 +206,7 @@ dependencies = [
 
 [[package]]
 name = "flatbuffers-tonic"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytes",
  "flatbuffers",
@@ -216,7 +216,7 @@ dependencies = [
 
 [[package]]
 name = "flatbuffers-tonic-build"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "flatbuffers-build",
  "flatbuffers-util",
@@ -246,7 +246,7 @@ dependencies = [
 
 [[package]]
 name = "flatbuffers-util"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytes",
  "flatbuffers",

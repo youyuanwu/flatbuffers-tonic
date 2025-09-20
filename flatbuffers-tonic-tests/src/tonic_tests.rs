@@ -1,4 +1,3 @@
-use flatbuffers_util::ownedfb::OwnedFB;
 use tokio_util::sync::CancellationToken;
 
 use crate::generated::{self, OwnedHelloReply, OwnedHelloRequest};
@@ -23,7 +22,8 @@ impl generated::greeter_server::Greeter for Greeter {
             },
         );
         builder.finish_minimal(reply);
-        let resp = unsafe { OwnedFB::new_from_builder_collapse(builder.collapse()) };
+        let resp =
+            unsafe { flatbuffers_tonic::OwnedFB::new_from_builder_collapse(builder.collapse()) };
         Ok(tonic::Response::new(OwnedHelloReply(resp)))
     }
 }
@@ -72,7 +72,7 @@ async fn test_server_client() {
     );
     builder.finish_minimal(req);
     let owned = unsafe {
-        flatbuffers_util::ownedfb::OwnedFB::<generated::fbs::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
+        flatbuffers_tonic::OwnedFB::<generated::fbs::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
     };
     let response = client
         .say_hello(tonic::Request::new(OwnedHelloRequest(owned)))
@@ -177,7 +177,7 @@ mod sample_test {
                 );
                 builder.finish_minimal(req);
                 let owned = unsafe {
-                    flatbuffers_util::ownedfb::OwnedFB::<
+                    flatbuffers_tonic::OwnedFB::<
                         crate::generated::sample::server_stream_response,
                     >::new_from_builder_collapse(builder.collapse())
                 };
@@ -276,7 +276,7 @@ mod sample_test {
         );
         builder.finish_minimal(req);
         let owned = unsafe {
-            flatbuffers_util::ownedfb::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
+            flatbuffers_tonic::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
         };
         let response = hello_client
             .say_hello(tonic::Request::new(crate::generated::Ownedsample_request(
@@ -298,7 +298,7 @@ mod sample_test {
             );
             builder.finish_minimal(req);
             let owned = unsafe {
-                flatbuffers_util::ownedfb::OwnedFB::<
+                flatbuffers_tonic::OwnedFB::<
                         crate::generated::sample::client_stream_request,
                     >::new_from_builder_collapse(builder.collapse())
             };
@@ -320,7 +320,7 @@ mod sample_test {
         );
         builder.finish_minimal(req);
         let owned = unsafe {
-            flatbuffers_util::ownedfb::OwnedFB::<
+            flatbuffers_tonic::OwnedFB::<
                 crate::generated::sample::server_stream_request,
             >::new_from_builder_collapse(builder.collapse())
         };
@@ -351,7 +351,7 @@ mod sample_test {
             );
             builder.finish_minimal(req);
             let owned = unsafe {
-                flatbuffers_util::ownedfb::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
+                flatbuffers_tonic::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
             };
             crate::generated::Ownedsample_request(owned)
         });

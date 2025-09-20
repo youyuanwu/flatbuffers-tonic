@@ -42,7 +42,7 @@ impl<T> OwnedFB<T> {
         Ok(unsafe { Self::new_from_vec_unchecked(buf, index) })
     }
 
-    /// This may be zero copy depending on the input.
+    /// This in practice is not zero copy for tonic.
     pub fn new_from_bytes(buf: bytes::Bytes) -> Result<OwnedFB<T>, InvalidFlatbuffer>
     where
         T: Verifiable + Follow<'static> + 'static,
@@ -51,7 +51,12 @@ impl<T> OwnedFB<T> {
             // This is zero copy if the Bytes has the full ownership of the vec.
             Ok(vec) => Self::new_from_vec(vec.into(), 0),
             // This will make a copy of the bytes.
-            Err(bytes) => Self::new_from_vec(bytes.to_vec(), 0),
+            Err(bytes) => {
+                // This happens in tonic DecodeBuf because it is a shared BytesMut.
+                // So in practice tonic forces us to make a copy here.
+                // debug_assert!(false, "zero copy failed.");
+                Self::new_from_vec(bytes.to_vec(), 0)
+            }
         }
     }
 

@@ -27,7 +27,7 @@ prettyplease = "0.2"
 syn = { version = "2"}
 heck = "0.5"
 
-flatbuffers-tonic = { version = "0.1.0", path = "flatbuffers-tonic" }
-flatbuffers-tonic-tests = { version = "0.1.0", path = "flatbuffers-tonic-tests" }
-flatbuffers-util = { version = "0.1.0", path = "flatbuffers-util" , features = ["reflect"] , default-features = false}
-flatbuffers-tonic-build = { version = "0.1.0", path = "flatbuffers-tonic-build" }
+flatbuffers-tonic = { version = "0.1", path = "flatbuffers-tonic" }
+flatbuffers-tonic-tests = { version = "0.1", path = "flatbuffers-tonic-tests" }
+flatbuffers-util = { version = "0.1", path = "flatbuffers-util" , features = ["reflect"] , default-features = false}
+flatbuffers-tonic-build = { version = "0.1", path = "flatbuffers-tonic-build" }
