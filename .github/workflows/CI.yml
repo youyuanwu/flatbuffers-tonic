@@ -59,9 +59,9 @@ jobs:
     - name: Show cov summary
       run: cargo llvm-cov report --summary-only --include-build-script --ignore-filename-regex "flatbuffers-tonic-tests.*"
 
-    # - name: Upload Report to Codecov
-    #   uses: codecov/codecov-action@v5
-    #   with:
-    #     files: ./codecov.json
-    #     fail_ci_if_error: true
-    #     token: ${{ secrets.CODECOV_TOKEN }} # required
+    - name: Upload Report to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: ./codecov.json
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }} # required

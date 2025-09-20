@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://raw.githubusercontent.com/youyuanwu/flatbuffers-tonic/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/flatbuffers-tonic)](https://crates.io/crates/flatbuffers-tonic)
 [![Documentation](https://docs.rs/flatbuffers-tonic/badge.svg)](https://docs.rs/flatbuffers-tonic)
+[![codecov](https://codecov.io/github/youyuanwu/flatbuffers-tonic/graph/badge.svg?token=PFCKMRK6P2)](https://codecov.io/github/youyuanwu/flatbuffers-tonic)
 
 Experimental implementation of using [flatbuffers](https://github.com/google/flatbuffers/tree/master/rust/flatbuffers) with [tonic](https://github.com/hyperium/tonic) gRPC for Rust.
 
