@@ -11,15 +11,31 @@ table sample_reply {
     message:string;
 }
 
-table client_stream_request{
+// client can sent multiple requests in a stream
+table client_stream_request {
     index: int;
 }
 
-table client_stream_response{
+table client_stream_response {
     count: int; // total number of stream chunk from client
 }
 
-rpc_service Sample {
+table server_stream_request {
+    count: int; // number of stream chunks to reply back from server.
+}
+
+// client send one request and server replies back multiple responses in a stream
+table server_stream_response {
+    message: string;
+}
+
+rpc_service HelloSample {
     say_hello(sample_request): sample_reply (streaming: "none");
+}
+
+rpc_service Sample {
     client_stream(client_stream_request): client_stream_response (streaming: "client");
+    server_stream(server_stream_request): server_stream_response (streaming: "server");
+    // send as many response as client sends requests
+    bidi_stream(sample_request): sample_reply (streaming: "bidi");
 }

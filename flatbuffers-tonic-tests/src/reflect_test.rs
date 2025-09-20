@@ -54,10 +54,10 @@ fn test_reflect_sample() {
 
     let ctx = flatbuffers_util::reflect::GeneratorContext::parse_from_schema(&schema);
     let services = ctx.get_services();
-    assert_eq!(services.len(), 1);
-    let service = &services[0];
+    assert_eq!(services.len(), 2);
+    let service = &services[1];
     assert_eq!(service.name, "Sample");
-    assert_eq!(service.methods.len(), 2);
+    assert_eq!(service.methods.len(), 3);
     for method in &service.methods {
         println!("Method: {method:?}");
         if method.name.as_str() == "client_stream" {

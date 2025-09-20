@@ -137,16 +137,14 @@ impl Method {
         let name = call.name().to_string();
         let request_type = call.request().name().to_string();
         let response_type = call.response().name().to_string();
-        let server_streaming = call
+        let streaming_type = call
             .attributes()
             .unwrap()
             .iter()
-            .any(|kv| kv.key() == "streaming" && kv.value() == Some("server"));
-        let client_streaming = call
-            .attributes()
-            .unwrap()
-            .iter()
-            .any(|kv| kv.key() == "streaming" && kv.value() == Some("client"));
+            .find(|kv| kv.key() == "streaming")
+            .and_then(|kv| kv.value());
+        let server_streaming = streaming_type == Some("server") || streaming_type == Some("bidi");
+        let client_streaming = streaming_type == Some("client") || streaming_type == Some("bidi");
         Method {
             name,
             request_name: request_type,

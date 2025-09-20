@@ -88,13 +88,15 @@ async fn test_server_client() {
 
 mod sample_test {
     use flatbuffers_tonic::OwnedFB;
+    use tokio::sync::mpsc;
     use tokio_stream::StreamExt;
     use tokio_util::sync::CancellationToken;
+    use tonic::transport::Endpoint;
 
-    pub struct SampleSvc {}
+    pub struct HelloSampleSvc {}
 
     #[tonic::async_trait]
-    impl crate::generated::sample_server::Sample for SampleSvc {
+    impl crate::generated::hello_sample_server::HelloSample for HelloSampleSvc {
         async fn say_hello(
             &self,
             request: tonic::Request<crate::generated::Ownedsample_request>,
@@ -116,7 +118,12 @@ mod sample_test {
                 resp,
             )))
         }
+    }
 
+    pub struct SampleSvc {}
+
+    #[tonic::async_trait]
+    impl crate::generated::sample_server::Sample for SampleSvc {
         async fn client_stream(
             &self,
             request: tonic::Request<tonic::Streaming<crate::generated::Ownedclient_stream_request>>,
@@ -142,6 +149,85 @@ mod sample_test {
                 crate::generated::Ownedclient_stream_response(resp),
             ))
         }
+
+        type server_streamStream = std::pin::Pin<
+            Box<
+                dyn tokio_stream::Stream<
+                        Item = Result<crate::generated::Ownedserver_stream_response, tonic::Status>,
+                    > + Send
+                    + 'static,
+            >,
+        >;
+
+        async fn server_stream(
+            &self,
+            request: tonic::Request<crate::generated::Ownedserver_stream_request>,
+        ) -> Result<tonic::Response<Self::server_streamStream>, tonic::Status> {
+            let request = request.into_inner();
+            let count = request.get_ref().count();
+            println!("server_stream request count: {count}");
+            let response_stream = tokio_stream::iter(0..count).map(|i| {
+                let mut builder = flatbuffers::FlatBufferBuilder::new();
+                let message = builder.create_string(&format!("server response {i}"));
+                let req = crate::generated::sample::server_stream_response::create(
+                    &mut builder,
+                    &crate::generated::sample::server_stream_responseArgs {
+                        message: Some(message),
+                    },
+                );
+                builder.finish_minimal(req);
+                let owned = unsafe {
+                    flatbuffers_util::ownedfb::OwnedFB::<
+                        crate::generated::sample::server_stream_response,
+                    >::new_from_builder_collapse(builder.collapse())
+                };
+                Ok(crate::generated::Ownedserver_stream_response(owned))
+            });
+            Ok(tonic::Response::new(Box::pin(response_stream)))
+        }
+
+        type bidi_streamStream = std::pin::Pin<
+            Box<
+                dyn tokio_stream::Stream<
+                        Item = Result<crate::generated::Ownedsample_reply, tonic::Status>,
+                    > + Send
+                    + 'static,
+            >,
+        >;
+
+        async fn bidi_stream(
+            &self,
+            request: tonic::Request<tonic::Streaming<crate::generated::Ownedsample_request>>,
+        ) -> Result<tonic::Response<Self::bidi_streamStream>, tonic::Status> {
+            let mut in_stream = request.into_inner();
+            let (tx, rx) = mpsc::channel(128);
+            tokio::spawn(async move {
+                while let Some(req) = in_stream.message().await.unwrap() {
+                    let req = req.get_ref();
+                    let name = req.name();
+                    println!("Got a name in bidi stream: {name:?}");
+                    let mut builder = flatbuffers::FlatBufferBuilder::new();
+                    let hello_str = builder.create_string(&format!("hello {}", name.unwrap_or("")));
+                    let reply = crate::generated::sample::sample_reply::create(
+                        &mut builder,
+                        &crate::generated::sample::sample_replyArgs {
+                            message: Some(hello_str),
+                        },
+                    );
+                    builder.finish_minimal(reply);
+                    let resp = unsafe { OwnedFB::new_from_builder_collapse(builder.collapse()) };
+                    match tx.send(Ok(crate::generated::Ownedsample_reply(resp))).await {
+                        Ok(_) => {}
+                        Err(_) => {
+                            println!("Failed to send response");
+                            break;
+                        }
+                    };
+                }
+            });
+            let out_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+            Ok(tonic::Response::new(Box::pin(out_stream)))
+        }
     }
 
     #[tokio::test]
@@ -152,9 +238,15 @@ mod sample_test {
         let svh = {
             let token = token.clone();
             tokio::spawn(async move {
-                let svc = crate::generated::sample_server::SampleServer::new(SampleSvc {});
                 tonic::transport::Server::builder()
-                    .add_service(svc)
+                    .add_service(crate::generated::sample_server::SampleServer::new(
+                        SampleSvc {},
+                    ))
+                    .add_service(
+                        crate::generated::hello_sample_server::HelloSampleServer::new(
+                            HelloSampleSvc {},
+                        ),
+                    )
                     .serve_with_incoming_shutdown(
                         tonic::transport::server::TcpIncoming::from(listener),
                         token.cancelled(),
@@ -163,11 +255,17 @@ mod sample_test {
                     .unwrap();
             })
         };
+
+        let ch = Endpoint::from_shared(format!("http://{}", addr))
+            .unwrap()
+            .connect()
+            .await
+            .unwrap();
+
         // run client to send a msg
-        let mut client =
-            crate::generated::sample_client::SampleClient::connect(format!("http://{}", addr))
-                .await
-                .unwrap();
+        let mut hello_client =
+            crate::generated::hello_sample_client::HelloSampleClient::new(ch.clone());
+        let mut client = crate::generated::sample_client::SampleClient::new(ch);
         let mut builder = flatbuffers::FlatBufferBuilder::new();
         let name_str = builder.create_string("tonic fbs");
         let req = crate::generated::sample::sample_request::create(
@@ -180,7 +278,7 @@ mod sample_test {
         let owned = unsafe {
             flatbuffers_util::ownedfb::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
         };
-        let response = client
+        let response = hello_client
             .say_hello(tonic::Request::new(crate::generated::Ownedsample_request(
                 owned,
             )))
@@ -213,6 +311,64 @@ mod sample_test {
         let reply = response.into_inner();
         let reply_ref = reply.get_ref();
         assert_eq!(reply_ref.count(), 10);
+
+        // test server stream
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let req = crate::generated::sample::server_stream_request::create(
+            &mut builder,
+            &crate::generated::sample::server_stream_requestArgs { count: 5 },
+        );
+        builder.finish_minimal(req);
+        let owned = unsafe {
+            flatbuffers_util::ownedfb::OwnedFB::<
+                crate::generated::sample::server_stream_request,
+            >::new_from_builder_collapse(builder.collapse())
+        };
+        let mut response = client
+            .server_stream(tonic::Request::new(
+                crate::generated::Ownedserver_stream_request(owned),
+            ))
+            .await
+            .unwrap()
+            .into_inner();
+        let mut idx = 0;
+        while let Some(msg) = response.next().await {
+            let msg = msg.unwrap();
+            let msg_ref = msg.get_ref();
+            let expected = format!("server response {idx}");
+            assert_eq!(msg_ref.message(), Some(expected.as_str()));
+            idx += 1;
+        }
+        assert_eq!(idx, 5);
+
+        // test bidi stream
+        let request_stream = tokio_stream::iter(0..5).map(|i| {
+            let mut builder = flatbuffers::FlatBufferBuilder::new();
+            let name_str = builder.create_string(&format!("name {i}"));
+            let req = crate::generated::sample::sample_request::create(
+                &mut builder,
+                &crate::generated::sample::sample_requestArgs { name: Some(name_str) },
+            );
+            builder.finish_minimal(req);
+            let owned = unsafe {
+                flatbuffers_util::ownedfb::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
+            };
+            crate::generated::Ownedsample_request(owned)
+        });
+        let mut response = client
+            .bidi_stream(tonic::Request::new(request_stream))
+            .await
+            .unwrap()
+            .into_inner();
+        let mut idx = 0;
+        while let Some(msg) = response.next().await {
+            let msg = msg.unwrap();
+            let msg_ref = msg.get_ref();
+            let expected = format!("hello name {idx}");
+            assert_eq!(msg_ref.message(), Some(expected.as_str()));
+            idx += 1;
+        }
+        assert_eq!(idx, 5);
 
         token.cancel();
         svh.await.unwrap();
