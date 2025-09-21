@@ -92,6 +92,13 @@ pub fn compile_types_alias(package: &str, types: &Vec<MessageType>) -> TokenStre
                     self.0.get_ref()
                 }
             }
+
+            /// Conversion from OwnedFB to wrapper type
+            impl From<flatbuffers_tonic::OwnedFB<#rs_type_mod::#rs_type<'static>>> for #wrapper_type {
+                fn from(value: flatbuffers_tonic::OwnedFB<#rs_type_mod::#rs_type<'static>>) -> Self {
+                    Self(value)
+                }
+            }
         });
         // add impl
         content.extend(quote! {

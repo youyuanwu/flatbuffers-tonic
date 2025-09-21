@@ -1,4 +1,8 @@
 #[cfg(feature = "reflect")]
 pub mod reflect;
 
-pub mod ownedfb;
+mod ownedfb;
+pub use ownedfb::OwnedFB;
+
+mod builder;
+pub use builder::FBBuilder;
