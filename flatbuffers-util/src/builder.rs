@@ -7,18 +7,18 @@ pub struct FBBuilder<T> {
     _phantom: std::marker::PhantomData<T>,
 }
 
-impl Default for FBBuilder<()> {
+impl<T> Default for FBBuilder<T> {
     fn default() -> Self {
-        Self::new()
+        Self {
+            builder: FlatBufferBuilder::new(),
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
 impl<T> FBBuilder<T> {
     pub fn new() -> Self {
-        Self {
-            builder: FlatBufferBuilder::new(),
-            _phantom: std::marker::PhantomData,
-        }
+        Self::default()
     }
 
     /// Get mutable reference to the builder.
