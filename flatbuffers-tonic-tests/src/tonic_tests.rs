@@ -1,3 +1,4 @@
+use flatbuffers_util::FBBuilder;
 use tokio_util::sync::CancellationToken;
 
 use crate::generated::{self, OwnedHelloReply, OwnedHelloRequest};
@@ -13,18 +14,18 @@ impl generated::greeter_server::Greeter for Greeter {
         let request = request.into_inner();
         let name = request.get_ref().name();
         println!("Got a name: {name:?}");
-        let mut builder = flatbuffers::FlatBufferBuilder::new();
-        let hello_str = builder.create_string(&format!("hello {}", name.unwrap_or("")));
+        let mut builder = FBBuilder::new();
+        let hello_str = builder
+            .get_mut()
+            .create_string(&format!("hello {}", name.unwrap_or("")));
         let reply = generated::fbs::helloworld::HelloReply::create(
-            &mut builder,
+            builder.get_mut(),
             &generated::fbs::helloworld::HelloReplyArgs {
                 message: Some(hello_str),
             },
         );
-        builder.finish_minimal(reply);
-        let resp =
-            unsafe { flatbuffers_tonic::OwnedFB::new_from_builder_collapse(builder.collapse()) };
-        Ok(tonic::Response::new(OwnedHelloReply(resp)))
+        let resp = builder.finish_owned(reply).into();
+        Ok(tonic::Response::new(resp))
     }
 }
 
@@ -62,22 +63,16 @@ async fn test_server_client() {
         .await
         .unwrap();
 
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let name_str = builder.create_string("tonic fbs");
+    let mut builder = FBBuilder::new();
+    let name_str = builder.get_mut().create_string("tonic fbs");
     let req = generated::fbs::helloworld::HelloRequest::create(
-        &mut builder,
+        builder.get_mut(),
         &generated::fbs::helloworld::HelloRequestArgs {
             name: Some(name_str),
         },
     );
-    builder.finish_minimal(req);
-    let owned = unsafe {
-        flatbuffers_tonic::OwnedFB::<generated::fbs::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
-    };
-    let response = client
-        .say_hello(tonic::Request::new(OwnedHelloRequest(owned)))
-        .await
-        .unwrap();
+    let req = builder.finish_owned(req).into();
+    let response = client.say_hello(tonic::Request::new(req)).await.unwrap();
     let reply = response.into_inner();
     let reply_ref = reply.get_ref();
     assert_eq!(reply_ref.message(), Some("hello tonic fbs"));
@@ -87,7 +82,7 @@ async fn test_server_client() {
 }
 
 mod sample_test {
-    use flatbuffers_tonic::OwnedFB;
+    use flatbuffers_tonic::FBBuilder;
     use tokio::sync::mpsc;
     use tokio_stream::StreamExt;
     use tokio_util::sync::CancellationToken;
@@ -104,19 +99,18 @@ mod sample_test {
             let request = request.into_inner();
             let name = request.get_ref().name();
             println!("Got a name: {name:?}");
-            let mut builder = flatbuffers::FlatBufferBuilder::new();
-            let hello_str = builder.create_string(&format!("hello {}", name.unwrap_or("")));
+            let mut builder = FBBuilder::new();
+            let hello_str = builder
+                .get_mut()
+                .create_string(&format!("hello {}", name.unwrap_or("")));
             let reply = crate::generated::sample::sample_reply::create(
-                &mut builder,
+                builder.get_mut(),
                 &crate::generated::sample::sample_replyArgs {
                     message: Some(hello_str),
                 },
             );
-            builder.finish_minimal(reply);
-            let resp = unsafe { OwnedFB::new_from_builder_collapse(builder.collapse()) };
-            Ok(tonic::Response::new(crate::generated::Ownedsample_reply(
-                resp,
-            )))
+            let resp = builder.finish_owned(reply).into();
+            Ok(tonic::Response::new(resp))
         }
     }
 
@@ -138,16 +132,13 @@ mod sample_test {
                 println!("Got stream chunk with index: {index}");
                 count += 1;
             }
-            let mut builder = flatbuffers::FlatBufferBuilder::new();
+            let mut builder = FBBuilder::new();
             let reply = crate::generated::sample::client_stream_response::create(
-                &mut builder,
+                builder.get_mut(),
                 &crate::generated::sample::client_stream_responseArgs { count },
             );
-            builder.finish_minimal(reply);
-            let resp = unsafe { OwnedFB::new_from_builder_collapse(builder.collapse()) };
-            Ok(tonic::Response::new(
-                crate::generated::Ownedclient_stream_response(resp),
-            ))
+            let resp = builder.finish_owned(reply).into();
+            Ok(tonic::Response::new(resp))
         }
 
         type server_streamStream = std::pin::Pin<
@@ -167,21 +158,18 @@ mod sample_test {
             let count = request.get_ref().count();
             println!("server_stream request count: {count}");
             let response_stream = tokio_stream::iter(0..count).map(|i| {
-                let mut builder = flatbuffers::FlatBufferBuilder::new();
-                let message = builder.create_string(&format!("server response {i}"));
-                let req = crate::generated::sample::server_stream_response::create(
-                    &mut builder,
+                let mut builder = FBBuilder::new();
+                let message = builder
+                    .get_mut()
+                    .create_string(&format!("server response {i}"));
+                let resp = crate::generated::sample::server_stream_response::create(
+                    builder.get_mut(),
                     &crate::generated::sample::server_stream_responseArgs {
                         message: Some(message),
                     },
                 );
-                builder.finish_minimal(req);
-                let owned = unsafe {
-                    flatbuffers_tonic::OwnedFB::<
-                        crate::generated::sample::server_stream_response,
-                    >::new_from_builder_collapse(builder.collapse())
-                };
-                Ok(crate::generated::Ownedserver_stream_response(owned))
+                let resp = builder.finish_owned(resp).into();
+                Ok(resp)
             });
             Ok(tonic::Response::new(Box::pin(response_stream)))
         }
@@ -206,17 +194,18 @@ mod sample_test {
                     let req = req.get_ref();
                     let name = req.name();
                     println!("Got a name in bidi stream: {name:?}");
-                    let mut builder = flatbuffers::FlatBufferBuilder::new();
-                    let hello_str = builder.create_string(&format!("hello {}", name.unwrap_or("")));
+                    let mut builder = FBBuilder::new();
+                    let hello_str = builder
+                        .get_mut()
+                        .create_string(&format!("hello {}", name.unwrap_or("")));
                     let reply = crate::generated::sample::sample_reply::create(
-                        &mut builder,
+                        builder.get_mut(),
                         &crate::generated::sample::sample_replyArgs {
                             message: Some(hello_str),
                         },
                     );
-                    builder.finish_minimal(reply);
-                    let resp = unsafe { OwnedFB::new_from_builder_collapse(builder.collapse()) };
-                    match tx.send(Ok(crate::generated::Ownedsample_reply(resp))).await {
+                    let resp = builder.finish_owned(reply).into();
+                    match tx.send(Ok(resp)).await {
                         Ok(_) => {}
                         Err(_) => {
                             println!("Failed to send response");
@@ -266,22 +255,17 @@ mod sample_test {
         let mut hello_client =
             crate::generated::hello_sample_client::HelloSampleClient::new(ch.clone());
         let mut client = crate::generated::sample_client::SampleClient::new(ch);
-        let mut builder = flatbuffers::FlatBufferBuilder::new();
-        let name_str = builder.create_string("tonic fbs");
+        let mut builder = FBBuilder::new();
+        let name_str = builder.get_mut().create_string("tonic fbs");
         let req = crate::generated::sample::sample_request::create(
-            &mut builder,
+            builder.get_mut(),
             &crate::generated::sample::sample_requestArgs {
                 name: Some(name_str),
             },
         );
-        builder.finish_minimal(req);
-        let owned = unsafe {
-            flatbuffers_tonic::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
-        };
+        let req = builder.finish_owned(req).into();
         let response = hello_client
-            .say_hello(tonic::Request::new(crate::generated::Ownedsample_request(
-                owned,
-            )))
+            .say_hello(tonic::Request::new(req))
             .await
             .unwrap();
         let reply = response.into_inner();
@@ -291,18 +275,12 @@ mod sample_test {
         // test client stream
         // create 10 messages
         let request_stream = tokio_stream::iter(0..10).map(|i| {
-            let mut builder = flatbuffers::FlatBufferBuilder::new();
+            let mut builder = FBBuilder::new();
             let req = crate::generated::sample::client_stream_request::create(
-                &mut builder,
+                builder.get_mut(),
                 &crate::generated::sample::client_stream_requestArgs { index: i },
             );
-            builder.finish_minimal(req);
-            let owned = unsafe {
-                flatbuffers_tonic::OwnedFB::<
-                        crate::generated::sample::client_stream_request,
-                    >::new_from_builder_collapse(builder.collapse())
-            };
-            crate::generated::Ownedclient_stream_request(owned)
+            builder.finish_owned(req).into()
         });
         let response = client
             .client_stream(tonic::Request::new(request_stream))
@@ -313,21 +291,14 @@ mod sample_test {
         assert_eq!(reply_ref.count(), 10);
 
         // test server stream
-        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let mut builder = FBBuilder::new();
         let req = crate::generated::sample::server_stream_request::create(
-            &mut builder,
+            builder.get_mut(),
             &crate::generated::sample::server_stream_requestArgs { count: 5 },
         );
-        builder.finish_minimal(req);
-        let owned = unsafe {
-            flatbuffers_tonic::OwnedFB::<
-                crate::generated::sample::server_stream_request,
-            >::new_from_builder_collapse(builder.collapse())
-        };
+        let req = builder.finish_owned(req).into();
         let mut response = client
-            .server_stream(tonic::Request::new(
-                crate::generated::Ownedserver_stream_request(owned),
-            ))
+            .server_stream(tonic::Request::new(req))
             .await
             .unwrap()
             .into_inner();
@@ -343,17 +314,15 @@ mod sample_test {
 
         // test bidi stream
         let request_stream = tokio_stream::iter(0..5).map(|i| {
-            let mut builder = flatbuffers::FlatBufferBuilder::new();
-            let name_str = builder.create_string(&format!("name {i}"));
+            let mut builder = FBBuilder::new();
+            let name_str = builder.get_mut().create_string(&format!("name {i}"));
             let req = crate::generated::sample::sample_request::create(
-                &mut builder,
-                &crate::generated::sample::sample_requestArgs { name: Some(name_str) },
+                builder.get_mut(),
+                &crate::generated::sample::sample_requestArgs {
+                    name: Some(name_str),
+                },
             );
-            builder.finish_minimal(req);
-            let owned = unsafe {
-                flatbuffers_tonic::OwnedFB::<crate::generated::sample::sample_request>::new_from_builder_collapse(builder.collapse())
-            };
-            crate::generated::Ownedsample_request(owned)
+            builder.finish_owned(req).into()
         });
         let mut response = client
             .bidi_stream(tonic::Request::new(request_stream))

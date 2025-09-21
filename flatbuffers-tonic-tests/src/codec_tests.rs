@@ -8,16 +8,12 @@ mod wrappers {
 
     use crate::generated::fbs::helloworld;
 
-    pub struct OwnedHelloRequest(
-        pub flatbuffers_util::ownedfb::OwnedFB<helloworld::HelloRequest<'static>>,
-    );
+    pub struct OwnedHelloRequest(pub flatbuffers_tonic::OwnedFB<helloworld::HelloRequest<'static>>);
 
     impl OwnedFBCodecable for OwnedHelloRequest {
         fn new_from_bytes(buf: bytes::Bytes) -> Result<Self, flatbuffers::InvalidFlatbuffer> {
             let owned =
-                flatbuffers_util::ownedfb::OwnedFB::<helloworld::HelloRequest>::new_from_bytes(
-                    buf,
-                )?;
+                flatbuffers_tonic::OwnedFB::<helloworld::HelloRequest>::new_from_bytes(buf)?;
             Ok(Self(owned))
         }
 
