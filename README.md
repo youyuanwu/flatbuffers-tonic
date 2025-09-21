@@ -39,6 +39,7 @@ tonic::include_proto!("flatbuffers_tonic.sample");
 Write tonic server:
 ```rs
 use crate::generated::{self, OwnedHelloReply, OwnedHelloRequest};
+use flatbuffers_tonic::FBBuilder;
 
 pub struct Greeter {}
 
@@ -51,18 +52,18 @@ impl generated::greeter_server::Greeter for Greeter {
         let request = request.into_inner();
         let name = request.get_ref().name();
         println!("Got a name: {name:?}");
-        let mut builder = flatbuffers::FlatBufferBuilder::new();
-        let hello_str = builder.create_string(&format!("hello {}", name.unwrap_or("")));
+        let mut builder = FBBuilder::new();
+        let hello_str = builder
+            .get_mut()
+            .create_string(&format!("hello {}", name.unwrap_or("")));
         let reply = generated::fbs::helloworld::HelloReply::create(
-            &mut builder,
+            builder.get_mut(),
             &generated::fbs::helloworld::HelloReplyArgs {
                 message: Some(hello_str),
             },
         );
-        builder.finish_minimal(reply);
-        let resp =
-            unsafe { flatbuffers_tonic::OwnedFB::new_from_builder_collapse(builder.collapse()) };
-        Ok(tonic::Response::new(OwnedHelloReply(resp)))
+        let resp = builder.finish_owned(reply).into();
+        Ok(tonic::Response::new(resp))
     }
 }
 
@@ -84,23 +85,16 @@ Use tonic client:
     let mut client = generated::greeter_client::GreeterClient::connect(format!("http://{}", addr))
         .await
         .unwrap();
-
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let name_str = builder.create_string("tonic fbs");
+    let mut builder = FBBuilder::new();
+    let name_str = builder.get_mut().create_string("tonic fbs");
     let req = generated::fbs::helloworld::HelloRequest::create(
-        &mut builder,
+        builder.get_mut(),
         &generated::fbs::helloworld::HelloRequestArgs {
             name: Some(name_str),
         },
     );
-    builder.finish_minimal(req);
-    let owned = unsafe {
-        flatbuffers_tonic::OwnedFB::<generated::fbs::helloworld::HelloRequest>::new_from_builder_collapse(builder.collapse())
-    };
-    let response = client
-        .say_hello(tonic::Request::new(OwnedHelloRequest(owned)))
-        .await
-        .unwrap();
+    let req = builder.finish_owned(req).into();
+    let response = client.say_hello(tonic::Request::new(req)).await.unwrap();
     let reply = response.into_inner();
     let reply_ref = reply.get_ref();
     assert_eq!(reply_ref.message(), Some("hello tonic fbs"));
