@@ -7,6 +7,12 @@ pub struct FBBuilder<T> {
     _phantom: std::marker::PhantomData<T>,
 }
 
+impl Default for FBBuilder<()> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> FBBuilder<T> {
     pub fn new() -> Self {
         Self {

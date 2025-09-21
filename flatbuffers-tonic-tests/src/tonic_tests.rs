@@ -19,7 +19,7 @@ impl generated::greeter_server::Greeter for Greeter {
             .get_mut()
             .create_string(&format!("hello {}", name.unwrap_or("")));
         let reply = generated::fbs::helloworld::HelloReply::create(
-            &mut builder.get_mut(),
+            builder.get_mut(),
             &generated::fbs::helloworld::HelloReplyArgs {
                 message: Some(hello_str),
             },
@@ -66,7 +66,7 @@ async fn test_server_client() {
     let mut builder = FBBuilder::new();
     let name_str = builder.get_mut().create_string("tonic fbs");
     let req = generated::fbs::helloworld::HelloRequest::create(
-        &mut builder.get_mut(),
+        builder.get_mut(),
         &generated::fbs::helloworld::HelloRequestArgs {
             name: Some(name_str),
         },
@@ -104,7 +104,7 @@ mod sample_test {
                 .get_mut()
                 .create_string(&format!("hello {}", name.unwrap_or("")));
             let reply = crate::generated::sample::sample_reply::create(
-                &mut builder.get_mut(),
+                builder.get_mut(),
                 &crate::generated::sample::sample_replyArgs {
                     message: Some(hello_str),
                 },
@@ -134,7 +134,7 @@ mod sample_test {
             }
             let mut builder = FBBuilder::new();
             let reply = crate::generated::sample::client_stream_response::create(
-                &mut builder.get_mut(),
+                builder.get_mut(),
                 &crate::generated::sample::client_stream_responseArgs { count },
             );
             let resp = builder.finish_owned(reply).into();
@@ -163,7 +163,7 @@ mod sample_test {
                     .get_mut()
                     .create_string(&format!("server response {i}"));
                 let resp = crate::generated::sample::server_stream_response::create(
-                    &mut builder.get_mut(),
+                    builder.get_mut(),
                     &crate::generated::sample::server_stream_responseArgs {
                         message: Some(message),
                     },
@@ -199,7 +199,7 @@ mod sample_test {
                         .get_mut()
                         .create_string(&format!("hello {}", name.unwrap_or("")));
                     let reply = crate::generated::sample::sample_reply::create(
-                        &mut builder.get_mut(),
+                        builder.get_mut(),
                         &crate::generated::sample::sample_replyArgs {
                             message: Some(hello_str),
                         },
@@ -258,7 +258,7 @@ mod sample_test {
         let mut builder = FBBuilder::new();
         let name_str = builder.get_mut().create_string("tonic fbs");
         let req = crate::generated::sample::sample_request::create(
-            &mut builder.get_mut(),
+            builder.get_mut(),
             &crate::generated::sample::sample_requestArgs {
                 name: Some(name_str),
             },
@@ -277,7 +277,7 @@ mod sample_test {
         let request_stream = tokio_stream::iter(0..10).map(|i| {
             let mut builder = FBBuilder::new();
             let req = crate::generated::sample::client_stream_request::create(
-                &mut builder.get_mut(),
+                builder.get_mut(),
                 &crate::generated::sample::client_stream_requestArgs { index: i },
             );
             builder.finish_owned(req).into()
@@ -293,7 +293,7 @@ mod sample_test {
         // test server stream
         let mut builder = FBBuilder::new();
         let req = crate::generated::sample::server_stream_request::create(
-            &mut builder.get_mut(),
+            builder.get_mut(),
             &crate::generated::sample::server_stream_requestArgs { count: 5 },
         );
         let req = builder.finish_owned(req).into();
@@ -317,7 +317,7 @@ mod sample_test {
             let mut builder = FBBuilder::new();
             let name_str = builder.get_mut().create_string(&format!("name {i}"));
             let req = crate::generated::sample::sample_request::create(
-                &mut builder.get_mut(),
+                builder.get_mut(),
                 &crate::generated::sample::sample_requestArgs {
                     name: Some(name_str),
                 },
