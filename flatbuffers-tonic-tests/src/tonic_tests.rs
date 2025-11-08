@@ -112,6 +112,27 @@ mod sample_test {
             let resp = builder.finish_owned(reply).into();
             Ok(tonic::Response::new(resp))
         }
+
+        async fn say_hello2(
+            &self,
+            request: tonic::Request<crate::generated::Ownedsample_request>,
+        ) -> Result<tonic::Response<crate::generated::Ownedsample_reply>, tonic::Status> {
+            let request = request.into_inner();
+            let name = request.get_ref().name();
+            println!("(say_hello2) Got a name: {name:?}");
+            let mut builder = FBBuilder::new();
+            let hello_str = builder
+                .get_mut()
+                .create_string(&format!("hello2 {}", name.unwrap_or("")));
+            let reply = crate::generated::sample::sample_reply::create(
+                builder.get_mut(),
+                &crate::generated::sample::sample_replyArgs {
+                    message: Some(hello_str),
+                },
+            );
+            let resp = builder.finish_owned(reply).into();
+            Ok(tonic::Response::new(resp))
+        }
     }
 
     pub struct SampleSvc {}

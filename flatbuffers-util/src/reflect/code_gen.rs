@@ -139,7 +139,7 @@ impl Method {
         let response_type = call.response().name().to_string();
         let streaming_type = call
             .attributes()
-            .unwrap()
+            .unwrap_or_default()
             .iter()
             .find(|kv| kv.key() == "streaming")
             .and_then(|kv| kv.value());

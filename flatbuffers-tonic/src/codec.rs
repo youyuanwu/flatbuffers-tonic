@@ -69,10 +69,10 @@ where
     type Error = Status;
 
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        // First could be zero copy due to Bytes::from(vec)
+        // First step is zero copy due to Bytes::from(vec)
         let bytes = item.into_bytes();
         buf.reserve(bytes.len());
-        // This still require copy due to BytesMut impl. This does not seem to be fixable.
+        // This still require copy due to BytesMut impl. Zero copy might not be possible.
         buf.put(bytes);
         Ok(())
     }
@@ -99,6 +99,8 @@ impl<U: OwnedFBCodecable + Send + 'static> Decoder for FlatBuffersDecoder<U> {
         // First should be zero copy due to BytesMut impl.
         let buf = src.copy_to_bytes(src.remaining());
         // This is not zero copy because DecodeBuf is a shared BytesMut.
+        // Even if it is not shared, BytesMut may have multiple chunks.
+        // Flatbuffer need contiguous memory, so this will make a copy in most cases.
         let owned_fb = U::new_from_bytes(buf)
             .map_err(|e| Status::internal(format!("Failed to decode FlatBuffer: {}", e)))?;
         Ok(Some(owned_fb))

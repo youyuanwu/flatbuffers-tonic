@@ -1,3 +1,4 @@
+// FB cpp does not require namespace, but tonic requires it.
 namespace fbs.helloworld;
 
 attribute "streaming";

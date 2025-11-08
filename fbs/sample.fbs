@@ -31,6 +31,7 @@ table server_stream_response {
 
 rpc_service HelloSample {
     say_hello(sample_request): sample_reply (streaming: "none");
+    say_hello2(sample_request): sample_reply;
 }
 
 rpc_service Sample {
