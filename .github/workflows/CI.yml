@@ -22,9 +22,13 @@ jobs:
     # install flatc
     - name: Install flatc windows
       if: runner.os == 'Windows'
+      shell: pwsh
       run: |
-        winget install flatbuffers --accept-package-agreements --accept-source-agreements --disable-interactivity
-        echo "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Google.FlatBuffers_Microsoft.Winget.Source_8wekyb3d8bbwe" >> $env:GITHUB_PATH
+        $zip = "$env:TEMP\flatc.zip"
+        $dir = "$env:TEMP\flatc"
+        Invoke-WebRequest -Uri "https://github.com/google/flatbuffers/releases/download/v25.2.10/Windows.flatc.binary.zip" -OutFile $zip
+        Expand-Archive -Path $zip -DestinationPath $dir -Force
+        echo $dir >> $env:GITHUB_PATH
     
     - name: Install flatc ubuntu
       if: runner.os == 'Linux'
