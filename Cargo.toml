@@ -23,8 +23,8 @@ tokio-stream = "0.1"
 tokio-util = "0.7"
 quote = "1"
 proc-macro2 = "1"
-prettyplease = "0.2"
-syn = { version = "2"}
+prettyplease = "0.3"
+syn = { version = "3"}
 heck = "0.5"
 
 flatbuffers-tonic = { version = "0.1", path = "flatbuffers-tonic" }
