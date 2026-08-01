@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     strategy:
       matrix:
         os: [ windows-2025, ubuntu-latest ]
@@ -64,11 +66,11 @@ jobs:
       run: cargo llvm-cov report --summary-only --include-build-script --ignore-filename-regex "flatbuffers-tonic-tests.*"
 
     - name: Skip Codecov upload without token
-      if: ${{ secrets.CODECOV_TOKEN == '' }}
+      if: ${{ env.CODECOV_TOKEN == '' }}
       run: echo "Skipping Codecov upload because CODECOV_TOKEN is not configured."
 
     - name: Upload Report to Codecov
-      if: ${{ secrets.CODECOV_TOKEN != '' }}
+      if: ${{ env.CODECOV_TOKEN != '' }}
       uses: codecov/codecov-action@v5
       with:
         files: ./codecov.json
