@@ -63,7 +63,12 @@ jobs:
     - name: Show cov summary
       run: cargo llvm-cov report --summary-only --include-build-script --ignore-filename-regex "flatbuffers-tonic-tests.*"
 
+    - name: Skip Codecov upload without token
+      if: ${{ secrets.CODECOV_TOKEN == '' }}
+      run: echo "Skipping Codecov upload because CODECOV_TOKEN is not configured."
+
     - name: Upload Report to Codecov
+      if: ${{ secrets.CODECOV_TOKEN != '' }}
       uses: codecov/codecov-action@v5
       with:
         files: ./codecov.json
